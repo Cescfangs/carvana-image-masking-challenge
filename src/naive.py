@@ -7,7 +7,7 @@ import cv2
 import pandas as pd
 import random
 from PIL import Image
-
+from keras.layers import Conv2D()
 random.seed(2017)
 np.random.seed(2017)
 
