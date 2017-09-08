@@ -2,10 +2,7 @@
 __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import numpy as np
-import gzip
-import os
 import glob
-import time
 import cv2
 import pandas as pd
 import random
