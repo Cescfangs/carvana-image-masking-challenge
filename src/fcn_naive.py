@@ -77,7 +77,7 @@ def create_model(input_shape):
 
 
 
-num_train = 3  # len(ids_train)
+num_train = 2  # len(ids_train)
 
 # Load data for position id=1
 # X = np.empty((num_train * 16, 320, 480, 3), dtype=np.float32)
@@ -92,8 +92,10 @@ for i, img_id in enumerate(ids_train[:num_train]):
     del x_batch, y_batch
     if i % 2 == 0:
         print('batch {}'.format(i))
-
+X = np.concatenate(X, axis=0)
+y = np.concatenate(y, axis=0)
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.25, random_state=42)
+print(X_train.shape)
 model = create_model(X_train.shape[1:])
 model.compile(Adam(lr=1e-3), dice_loss, metrics=['accuracy', dice_coef])
 history = model.fit(X_train, y_train, epochs=1, validation_data=(X_val, y_val), batch_size=8, verbose=1)
