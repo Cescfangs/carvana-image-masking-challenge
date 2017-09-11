@@ -3,17 +3,16 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import numpy as np
 import glob
-import cv2
+# import cv2
 import pandas as pd
 import random
 from PIL import Image
-from keras.layers import Conv2D()
 random.seed(2017)
 np.random.seed(2017)
 
 NUM_OF_IMAGES_FROM_TRAIN = 600
-INPUT_PATH = '../input/'
-OUTPUT_PATH = './'
+INPUT_PATH = '../../data/'
+OUTPUT_PATH = '../../data/results/'
 
 
 def rle(img):
@@ -109,6 +108,16 @@ def create_submission(best_score, avg_mask):
     str = rle(avg_mask)
     t['rle_mask'] = str
     t.to_csv('subm_{}.gz'.format(best_score), index=False, compression='gzip')
+
+
+def make_submission(pred, name):
+    print('...creating submission...')
+    img_name, masks = pred
+    # print(img_name, masks)
+    res = [rle(mask) for mask in masks]
+    # print(res)
+    df = pd.DataFrame({'img': img_name, 'rle_mask': res})
+    df.to_csv(OUTPUT_PATH + name + '.gz', index=None, compression='gzip')
 
 
 if __name__ == '__main__':
