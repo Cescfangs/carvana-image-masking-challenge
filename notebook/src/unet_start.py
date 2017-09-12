@@ -177,14 +177,13 @@ def create_model():
 def predict_mask(model, name, batch_size=32):
     res = []
     ids = []
-    gen = test_generator('../../data/test/test_dir/', batch_size, [input_width, input_height])
+    gen = test_generator('../../data/test/', batch_size, [input_width, input_height])
     imgs, img_ids = next(gen)
     i = 0
     while img_ids:
         i += 1
         print('step {}, len {}'.format(i, len(img_ids)))
         res_batch = model.predict(imgs)
-        print(res_batch.shape)
         res_batch = [resize(img, (output_width, output_height)) > 0.5 for img in res_batch]
         res.extend(res_batch)
         ids.extend(list(img_ids))
@@ -199,10 +198,10 @@ if __name__ == '__main__':
     model = create_model()
     # model.load_weights('../../model/1.weights')
     model.compile(optimizer=Adam(1e-4), loss='binary_crossentropy', metrics=[dice_coef])
-    model.fit_generator(train_gen, steps_per_epoch=10, epochs=1)
+    model.fit_generator(train_gen, steps_per_epoch=16, epochs=10)
     model.save_weights('../../model/1.weights')
     # test_gen = test_generator('../../data/test/', batch_size=2)
     # pred = model.predict_generator(test_gen, steps=1)
     # make_submission()
     # print(pred)
-    predict_mask(model, '1', 100)
+    predict_mask(model, '1', 128)
