@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from functools import wraps
 from keras.models import Sequential, Model
 from keras.layers import Dense, Conv2D, Input, MaxPool2D, UpSampling2D, Concatenate, Conv2DTranspose
 from keras.optimizers import Adam
@@ -9,7 +10,7 @@ from scipy.misc import imresize
 from cv2 import resize
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import array_to_img, img_to_array, load_img, ImageDataGenerator
-from naive import make_submission
+from naive import make_submission, rle, fn_timer
 
 
 data_dir = "../../data/train/"
@@ -76,6 +77,7 @@ def data_gen_small(data_dir, mask_dir, images, batch_size, dims):
 
 def test_generator(data_dir, batch_size, dims):
     all_images = os.listdir(data_dir)
+    all_images = [img for img in all_images if img.endswith('.jpg')]
     while 1:
         img_ids = all_images[:batch_size]
         all_images = all_images[batch_size:]
@@ -174,21 +176,28 @@ def create_model():
     return model
 
 
+@fn_timer
 def predict_mask(model, name, batch_size=32):
     res = []
     ids = []
     gen = test_generator('../../data/test/', batch_size, [input_width, input_height])
     imgs, img_ids = next(gen)
-    i = 0
+    step = 0
+    # part = 0
     while img_ids:
-        i += 1
-        print('step {}, len {}'.format(i, len(img_ids)))
+        step += 1
+        print('step {}, len {}'.format(step, len(img_ids)))
         res_batch = model.predict(imgs)
         res_batch = [resize(img, (output_width, output_height)) > 0.5 for img in res_batch]
+        res_batch = [rle(img) for img in res_batch]
         res.extend(res_batch)
         ids.extend(list(img_ids))
         imgs, img_ids = next(gen)
+        # if len(res) > 10:
+        #     print('making submission part {}'.format(part))
+        #     part += 1
     make_submission([ids, res], name)
+        #     ids, res = [], []
 
 
 if __name__ == '__main__':
@@ -198,10 +207,6 @@ if __name__ == '__main__':
     model = create_model()
     # model.load_weights('../../model/1.weights')
     model.compile(optimizer=Adam(1e-4), loss='binary_crossentropy', metrics=[dice_coef])
-    model.fit_generator(train_gen, steps_per_epoch=16, epochs=10)
+    model.fit_generator(train_gen, steps_per_epoch=32, epochs=8)
     model.save_weights('../../model/1.weights')
-    # test_gen = test_generator('../../data/test/', batch_size=2)
-    # pred = model.predict_generator(test_gen, steps=1)
-    # make_submission()
-    # print(pred)
-    predict_mask(model, '1', 128)
+    predict_mask(model, '1', 256)

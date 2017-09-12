@@ -3,16 +3,32 @@ __author__ = 'ZFTurbo: https://kaggle.com/zfturbo'
 
 import numpy as np
 import glob
+import time
 # import cv2
 import pandas as pd
 import random
 from PIL import Image
+from functools import wraps
 random.seed(2017)
 np.random.seed(2017)
 
 NUM_OF_IMAGES_FROM_TRAIN = 600
 INPUT_PATH = '../../data/'
 OUTPUT_PATH = '../../data/results/'
+
+
+def fn_timer(function):
+    @wraps(function)
+    def function_timer(*args, **kwargs):
+        print(' ..... Executing {} .....'.format(function.__name__))
+        t0 = time.time()
+        result = function(*args, **kwargs)
+        t1 = time.time()
+        print('  ...Total time running %s: --> %s seconds <--' %
+              (function.__name__, str(t1 - t0)))
+        print(' ..... func {} returned ..... '.format(function.__name__))
+        return result
+    return function_timer
 
 
 def rle(img):
@@ -110,14 +126,14 @@ def create_submission(best_score, avg_mask):
     t.to_csv('subm_{}.gz'.format(best_score), index=False, compression='gzip')
 
 
-def make_submission(pred, name):
+def make_submission(pred, name, compression='gzip'):
     print('...creating submission...')
     img_name, masks = pred
     # print(img_name, masks)
-    res = [rle(mask) for mask in masks]
+    # res = [rle(mask) for mask in masks]
     # print(res)
-    df = pd.DataFrame({'img': img_name, 'rle_mask': res})
-    df.to_csv(OUTPUT_PATH + name + '.gz', index=None, compression='gzip')
+    df = pd.DataFrame({'img': img_name, 'rle_mask': masks})
+    df.to_csv(OUTPUT_PATH + name + '.gz', index=None, compression=compression)
 
 
 if __name__ == '__main__':
