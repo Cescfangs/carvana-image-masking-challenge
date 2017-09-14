@@ -1,17 +1,13 @@
 import os
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from functools import wraps
 from keras.models import Sequential, Model
 from keras.layers import Dense, Conv2D, Input, MaxPool2D, UpSampling2D, Concatenate, Conv2DTranspose
 from keras.optimizers import Adam
-from scipy.misc import imresize
-from cv2 import resize
+from cv2 import resize, imread
 from sklearn.model_selection import train_test_split
 from keras.preprocessing.image import array_to_img, img_to_array, load_img, ImageDataGenerator
 from naive import make_submission, rle, fn_timer
-
 
 data_dir = "../../data/train/"
 mask_dir = "../../data/train_masks/"
@@ -60,16 +56,16 @@ def data_gen_small(data_dir, mask_dir, images, batch_size, dims):
         labels = []
         for i in ix:
             # images
-            original_img = load_img(data_dir + images[i])
-            resized_img = imresize(original_img, dims + [3])
+            original_img = imread(data_dir + images[i])
+            resized_img = resize(original_img, dims)
             array_img = img_to_array(resized_img) / 255
             imgs.append(array_img)
 
             # masks
             original_mask = load_img(mask_dir + images[i].split(".")[0] + '_mask.gif')
-            resized_mask = imresize(original_mask, dims + [3])
-            array_mask = img_to_array(resized_mask) / 255
-            labels.append(array_mask[:, :, 0])
+            array_mask = img_to_array(original_mask) / 255
+            resized_mask = resize(array_mask, dims)
+            labels.append(resized_mask[:, :, 0])
         imgs = np.array(imgs)
         labels = np.array(labels)
         yield imgs, labels.reshape(-1, dims[0], dims[1], 1)
@@ -81,8 +77,10 @@ def test_generator(data_dir, batch_size, dims):
     while 1:
         img_ids = all_images[:batch_size]
         all_images = all_images[batch_size:]
-        imgs = [load_img(data_dir + img_id) for img_id in img_ids]
-        imgs = np.array([imresize(img, dims + [3]) for img in imgs]) / 255
+        imgs = np.array([imread(data_dir + img_id) for img_id in img_ids])
+
+        # imgs = np.concatenate(imgs) / 255
+        # imgs = np.array([imresize(img, dims + [3]) for img in imgs]) / 255
         yield imgs, img_ids
 
     # datagen = ImageDataGenerator(rescale=1./255)
@@ -119,7 +117,7 @@ def up(input_layer, residual, filters):
 def create_model():
     # Make a custom U-nets implementation.
     filters = 64
-    input_layer = Input(shape=[input_width, input_height, 3])
+    input_layer = Input(shape=[input_height, input_width, 3])
     layers = [input_layer]
     residuals = []
 
@@ -180,7 +178,7 @@ def create_model():
 def predict_mask(model, name, batch_size=32):
     res = []
     ids = []
-    gen = test_generator('../../data/test/', batch_size, [input_width, input_height])
+    gen = test_generator('../../data/test_small/', batch_size, [input_width, input_height])
     imgs, img_ids = next(gen)
     step = 0
     # part = 0
@@ -193,20 +191,17 @@ def predict_mask(model, name, batch_size=32):
         res.extend(res_batch)
         ids.extend(list(img_ids))
         imgs, img_ids = next(gen)
-        # if len(res) > 10:
-        #     print('making submission part {}'.format(part))
-        #     part += 1
     make_submission([ids, res], name)
         #     ids, res = [], []
 
 
 if __name__ == '__main__':
     # example use
-    train_gen = data_gen_small(data_dir, mask_dir, train_images, 32, [input_width, input_height])
+    train_gen = data_gen_small(data_dir, mask_dir, train_images, 32, (input_width, input_height))
     img, msk = next(train_gen)
     model = create_model()
     # model.load_weights('../../model/1.weights')
     model.compile(optimizer=Adam(1e-4), loss='binary_crossentropy', metrics=[dice_coef])
-    model.fit_generator(train_gen, steps_per_epoch=32, epochs=8)
+    model.fit_generator(train_gen, steps_per_epoch=32, epochs=1)
     model.save_weights('../../model/1.weights')
-    predict_mask(model, '1', 256)
+    predict_mask(model, '1', 25)
