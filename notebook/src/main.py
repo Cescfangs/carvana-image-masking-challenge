@@ -21,5 +21,5 @@ if __name__ == '__main__':
     # model.save_weights('../../model/1.weights')
     # predict_mask(model, '1', 25)
     net = myUnet(img_rows=input_height, img_cols=input_width)
-    net.train(batch_size=32, epochs=5, load_weights=False, weights_path='../../model/unet.hdf5')
-    net.predict_mask('2', batch_size=512)
+    net.train(batch_size=32, epochs=10, load_weights=False, weights_path='../../model/unet.hdf5')
+    net.predict_batch('2', batch_size=256)

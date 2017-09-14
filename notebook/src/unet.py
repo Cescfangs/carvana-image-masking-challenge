@@ -4,8 +4,21 @@ from keras.layers import Input, merge, Conv2D, MaxPooling2D, UpSampling2D, Dropo
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from util import *
-from cv2 import resize
+from cv2 import resize, imread
 # from data import dataProcess
+
+
+def test_generator(data_dir, batch_size, dims=None):
+    all_images = os.listdir(data_dir)
+    all_images = [img for img in all_images if img.endswith('.jpg')]
+    while 1:
+        img_ids = all_images[:batch_size]
+        all_images = all_images[batch_size:]
+        imgs = np.array([imread(data_dir + img_id) for img_id in img_ids])
+
+        # imgs = np.concatenate(imgs) / 255
+        # imgs = np.array([imresize(img, dims + [3]) for img in imgs]) / 255
+        yield imgs, img_ids
 
 
 class myUnet(object):
@@ -25,7 +38,6 @@ class myUnet(object):
         mask = np.load(os.path.join(mask_dir, 'img.npy'))
         test = np.load(os.path.join(test_dir, 'img.npy'))
 
-
         assert (train.ndim == 4 and
                 mask.ndim == 3 and
                 test.ndim == 4 and
@@ -39,7 +51,7 @@ class myUnet(object):
         return train, mask, test
 
     def get_unet(self):
-
+        filters = 16
         inputs = Input((self.img_rows, self.img_cols, 3))
 
         '''
@@ -104,59 +116,59 @@ class myUnet(object):
     conv9 = Conv2D(2, 3, activation = 'relu', padding = 'valid', kernel_initializer = 'he_normal')(conv9)
     '''
 
-        conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
+        conv1 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs)
         print("conv1 shape:", conv1.shape)
-        conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
+        conv1 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
         print("conv1 shape:", conv1.shape)
         pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
         print("pool1 shape:", pool1.shape)
 
-        conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
+        conv2 = Conv2D(filters * 2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
         print("conv2 shape:", conv2.shape)
-        conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv2)
+        conv2 = Conv2D(filters * 2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv2)
         print("conv2 shape:", conv2.shape)
         pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
         print("pool2 shape:", pool2.shape)
 
-        conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool2)
+        conv3 = Conv2D(filters * 4, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool2)
         print("conv3 shape:", conv3.shape)
-        conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv3)
+        conv3 = Conv2D(filters * 4, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv3)
         print("conv3 shape:", conv3.shape)
         pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
         print("pool3 shape:", pool3.shape)
 
-        conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool3)
-        conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv4)
+        conv4 = Conv2D(filters * 8, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool3)
+        conv4 = Conv2D(filters * 8, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv4)
         drop4 = Dropout(0.5)(conv4)
         pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
 
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool4)
-        conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
+        conv5 = Conv2D(filters * 16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool4)
+        conv5 = Conv2D(filters * 16, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
         drop5 = Dropout(0.5)(conv5)
 
-        up6 = Conv2D(512, 2, activation='relu', padding='same',
+        up6 = Conv2D(filters * 8, 2, activation='relu', padding='same',
                      kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(drop5))
         merge6 = merge([drop4, up6], mode='concat', concat_axis=3)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge6)
-        conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
+        conv6 = Conv2D(filters * 8, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge6)
+        conv6 = Conv2D(filters * 8, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
 
-        up7 = Conv2D(256, 2, activation='relu', padding='same',
+        up7 = Conv2D(filters * 4, 2, activation='relu', padding='same',
                      kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv6))
         merge7 = merge([conv3, up7], mode='concat', concat_axis=3)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge7)
-        conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
+        conv7 = Conv2D(filters * 4, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge7)
+        conv7 = Conv2D(filters * 4, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
 
-        up8 = Conv2D(128, 2, activation='relu', padding='same',
+        up8 = Conv2D(filters * 2, 2, activation='relu', padding='same',
                      kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv7))
         merge8 = merge([conv2, up8], mode='concat', concat_axis=3)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge8)
-        conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
+        conv8 = Conv2D(filters * 2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge8)
+        conv8 = Conv2D(filters * 2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
 
-        up9 = Conv2D(64, 2, activation='relu', padding='same',
+        up9 = Conv2D(filters, 2, activation='relu', padding='same',
                      kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv8))
         merge9 = merge([conv1, up9], mode='concat', concat_axis=3)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
-        conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+        conv9 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
+        conv9 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
         conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
         conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
 
@@ -181,7 +193,7 @@ class myUnet(object):
             model_checkpoint = ModelCheckpoint('../../model/unet.hdf5', monitor='loss', verbose=1, save_best_only=True)
             print('Fitting model...')
             self.model.fit(imgs_train, imgs_mask_train, batch_size=batch_size, epochs=epochs,
-                      verbose=1, shuffle=True, callbacks=[model_checkpoint])
+                           verbose=1, shuffle=True, callbacks=[model_checkpoint])
 
         # print('predict test data')
         # imgs_mask_test = model.predict(imgs_test, batch_size=1, verbose=1)
@@ -203,6 +215,24 @@ class myUnet(object):
             res_batch = [rle(img) for img in res_batch]
             res.extend(res_batch)
         make_submission((ids, res), name)
+
+    @fn_timer
+    def predict_batch(self, name, batch_size, output_shape=(1918, 1280)):
+        res = []
+        ids = []
+        gen = test_generator(self.test_dir, batch_size)
+        imgs, img_ids = next(gen)
+        step = 0
+        while img_ids:
+            step += 1
+            print('step {}, len {}'.format(step, len(img_ids)))
+            res_batch = self.model.predict(imgs)
+            res_batch = [resize(img, output_shape) > 0.5 for img in res_batch]
+            res_batch = [rle(img) for img in res_batch]
+            res.extend(res_batch)
+            ids.extend(list(img_ids))
+            imgs, img_ids = next(gen)
+        make_submission([ids, res], name)
 
 
 if __name__ == '__main__':
