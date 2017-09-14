@@ -36,19 +36,16 @@ class myUnet(object):
 
         train = np.load(os.path.join(train_dir, 'img.npy'))
         mask = np.load(os.path.join(mask_dir, 'img.npy'))
-        test = np.load(os.path.join(test_dir, 'img.npy'))
+        # test = np.load(os.path.join(test_dir, 'img.npy'))
 
         assert (train.ndim == 4 and
                 mask.ndim == 3 and
-                test.ndim == 4 and
-                train.shape[1:] == test.shape[1:] and
                 train.shape[:-1] == mask.shape)
         mask = np.expand_dims(mask, axis=3)
         self.test_dir = test_dir
         self.train_dir = train_dir
-        self.test_data = test
 
-        return train, mask, test
+        return train, mask
 
     def get_unet(self):
         filters = 16
@@ -179,7 +176,7 @@ class myUnet(object):
     @fn_timer
     def train(self, batch_size=32, epochs=10, load_weights=False, **kwargs):
         print("loading data")
-        imgs_train, imgs_mask_train, imgs_test = self.load_data()
+        imgs_train, imgs_mask_train = self.load_data()
         print("loading data done")
         self.get_unet()
         print("got unet")
