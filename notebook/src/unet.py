@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import *
-from keras.layers import Input, merge, Conv2D, MaxPool2D, MaxPooling2D, UpSampling2D, Dropout, Cropping2D, Concatenate
+from keras.layers import Input, merge, Conv2D, MaxPool2D, MaxPooling2D, UpSampling2D, Dropout, Cropping2D, Concatenate, BatchNormalization
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from util import *
@@ -23,6 +23,7 @@ def test_generator(data_dir, batch_size, dims=None):
 
 def down(input_layer, filters, pool=True):
     conv1 = Conv2D(filters, (3, 3), padding='same', activation='relu')(input_layer)
+    conv1  = BatchNormalization()(conv1)
     residual = Conv2D(filters, (3, 3), padding='same', activation='relu')(conv1)
     if pool:
         max_pool = MaxPool2D()(residual)
