@@ -43,7 +43,7 @@ def up(input_layer, residual, filters):
 
 def create_model(input_width, input_height):
     # Make a custom U-nets implementation.
-    filters = 64
+    filters = 16
     input_layer = Input(shape=(input_height, input_width, 3))
     layers = [input_layer]
     residuals = []
