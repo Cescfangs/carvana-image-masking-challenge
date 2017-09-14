@@ -27,7 +27,12 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 imgs = os.listdir(input_dir)
-imgs = [img for img in imgs if img[-3:] in ['jpg', 'gif']]
+if is_mask:
+    imgs = list(np.load(os.path.join(input_dir, 'img_ids.npy')))
+    imgs = [img_id[:-4] + '_mask.gif' for img_id in imgs]
+else:
+    imgs = [img for img in imgs if img[-3:] == 'jpg']
+    np.save(os.path.join(output_dir, 'img_ids.npy'), imgs)
 
 i = 0
 img_array = []
