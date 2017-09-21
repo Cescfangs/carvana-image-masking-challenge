@@ -36,6 +36,7 @@ def up(input_layer, residual, filters):
     filters = int(filters)
     upsample = UpSampling2D()(input_layer)
     upconv = Conv2D(filters, kernel_size=(2, 2), padding="same")(upsample)
+    upconv = BatchNormalization()(upconv)
     concat = Concatenate(axis=3)([residual, upconv])
     conv1 = Conv2D(filters, (3, 3), padding='same', activation='relu')(concat)
     conv2 = Conv2D(filters, (3, 3), padding='same', activation='relu')(conv1)
@@ -44,7 +45,7 @@ def up(input_layer, residual, filters):
 
 def create_model(input_width, input_height):
     # Make a custom U-nets implementation.
-    filters = 16
+    filters = 32
     input_layer = Input(shape=(input_height, input_width, 3))
     layers = [input_layer]
     residuals = []
@@ -97,7 +98,7 @@ def create_model(input_width, input_height):
     out = Conv2D(filters=1, kernel_size=(1, 1), activation="sigmoid")(up4)
 
     model = Model(input_layer, out)
-    model.compile(optimizer=Adam(lr=1e-4), loss=bce_dice_loss, metrics=[dice_coef])
+    model.compile(optimizer=Adam(lr=6e-5), loss=bce_dice_loss, metrics=[dice_coef])
     model.summary()
 
     return model
