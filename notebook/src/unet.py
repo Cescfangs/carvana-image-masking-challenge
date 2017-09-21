@@ -223,7 +223,7 @@ class myUnet(object):
             print(('step {}, len {}'.format(step, len(imgs))))
             res_batch = self.model.predict(imgs)
             res_batch = [resize(img, output_shape) > 0.5 for img in res_batch]
-            res_batch = [rle(img) for img in res_batch]
+            res_batch = [rle_fast(img) for img in res_batch]
             res.extend(res_batch)
         make_submission((ids, res), name)
 

@@ -44,6 +44,22 @@ def rle(img):
     return ' '.join([str(i) for i in runs])
 
 
+def rle_fast(img):
+    flat_img = img.flatten()
+    flat_img = np.where(flat_img > 0.5, 1, 0).astype(np.uint8)
+    flat_img = np.insert(flat_img, [0, len(flat_img)], [0, 0])
+
+    starts = np.array((flat_img[:-1] == 0) & (flat_img[1:] == 1))
+    ends = np.array((flat_img[:-1] == 1) & (flat_img[1:] == 0))
+    starts_ix = np.where(starts)[0] + 1
+    ends_ix = np.where(ends)[0] + 1
+    lengths = ends_ix - starts_ix
+
+    encoding = ''
+    for idx in range(len(starts_ix)):
+        encoding += '%d %d ' % (starts_ix[idx], lengths[idx])
+    return encoding.strip()
+
 
 def bce_dice_loss(y_true, y_pred):
     return 0.5 * binary_crossentropy(y_true, y_pred) - dice_coef(y_true, y_pred)
