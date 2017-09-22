@@ -4,3 +4,4 @@
 #cache
 *.bak
 *.hdf5
+*.pyc
