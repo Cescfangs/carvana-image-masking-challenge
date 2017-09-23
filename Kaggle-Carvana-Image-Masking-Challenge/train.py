@@ -8,9 +8,11 @@ from scipy.misc import imread
 import params
 
 input_size = params.input_size
+input_w = params.input_w
+input_h = params.input_h
 epochs = params.max_epochs
 batch_size = params.batch_size
-model = params.model_factory()
+model = params.model_factory
 
 df_train = pd.read_csv('input/train_masks.csv')
 ids_train = df_train['img'].map(lambda s: s.split('.')[0])
@@ -95,10 +97,10 @@ def train_generator():
             ids_train_batch = ids_train_split[start:end]
             for id in ids_train_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                img = cv2.resize(img, (input_size, input_size))
+                img = cv2.resize(img, (input_w, input_h))
                 # mask = cv2.imread('input/train_masks/{}_mask.png'.format(id), cv2.IMREAD_GRAYSCALE)
                 mask = imread('input/train_masks/{}_mask.gif'.format(id))[...,0]
-                mask = cv2.resize(mask, (input_size, input_size))
+                mask = cv2.resize(mask, (input_w, input_h))
                 img = randomHueSaturationValue(img,
                                                hue_shift_limit=(-50, 50),
                                                sat_shift_limit=(-5, 5),
@@ -125,9 +127,9 @@ def valid_generator():
             ids_valid_batch = ids_valid_split[start:end]
             for id in ids_valid_batch.values:
                 img = cv2.imread('input/train/{}.jpg'.format(id))
-                img = cv2.resize(img, (input_size, input_size))
+                img = cv2.resize(img, (input_w, input_h))
                 mask = imread('input/train_masks/{}_mask.gif'.format(id))[...,0]
-                mask = cv2.resize(mask, (input_size, input_size))
+                mask = cv2.resize(mask, (input_w, input_h))
                 mask = np.expand_dims(mask, axis=2)
                 x_batch.append(img)
                 y_batch.append(mask)
