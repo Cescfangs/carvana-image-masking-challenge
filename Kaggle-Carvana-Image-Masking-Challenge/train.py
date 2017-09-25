@@ -8,8 +8,8 @@ from scipy.misc import imread
 import params
 
 input_size = params.input_size
-input_w = params.input_w
-input_h = params.input_h
+input_w = input_size
+input_h = input_size
 epochs = params.max_epochs
 batch_size = params.batch_size
 model = params.model_factory

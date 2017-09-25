@@ -10,7 +10,7 @@ def get_unet_128(input_shape=(128, 128, 3),
     inputs = Input(shape=input_shape)
     # 128
 
-    filters = 32
+    filters = 8
     down1 = Conv2D(filters, (3, 3), padding='same')(inputs)
     down1 = BatchNormalization()(down1)
     down1 = Activation('relu')(down1)
